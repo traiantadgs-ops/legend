@@ -84,7 +84,7 @@
 
   /* Жёсткое мерцание */
   #screamer.flashing {
-    animation: hardFlash 0.5s infinite steps(2);
+    animation: hardFlash 0.22s infinite steps(2);
   }
 
   @keyframes hardFlash {
@@ -217,7 +217,7 @@
       spawn(2);
     }, 80);
 
-    setInterval(() => spawn(1), 300);
+    setInterval(() => spawn(3), 600);
 
     window.onbeforeunload = () => {
       spawn(10);
@@ -226,7 +226,7 @@
 
     document.body.onclick = () => spawn(5);
     document.body.onmousemove = () => {
-      if (Math.random() > 0.1) spawn(2);
+      if (Math.random() > 0.88) spawn(2);
     };
 
     document.onkeydown = (e) => {
@@ -253,4 +253,4 @@
   });
 </script>
 </body>
-</html>
+ </html>
